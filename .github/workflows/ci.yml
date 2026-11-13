@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build-and-test:
+    name: Build and test (ROS 2 Jazzy)
+    runs-on: ubuntu-24.04
+    container: ros:jazzy-ros-base
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: src/openarm-vision-kitting
+
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends python3-vcstool
+          vcs import src < src/openarm-vision-kitting/dependencies.repos
+          rosdep update --rosdistro jazzy
+          rosdep install -y --rosdistro jazzy --from-paths src --ignore-src
+
+      - name: Build
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          colcon build --event-handlers console_cohesion+ --cmake-args -DCMAKE_BUILD_TYPE=Release
+
+      - name: Test (perception unit tests, lint, end-to-end kitting on mock hardware)
+        run: |
+          source install/setup.bash
+          colcon test --packages-select openarm_kitting_perception openarm_kitting --event-handlers console_cohesion+
+          colcon test-result --verbose
+
+      - name: Test summary
+        if: always()
+        run: |
+          {
+            echo '### Test results'
+            echo '```'
+            colcon test-result --verbose 2>&1 | tail -40 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

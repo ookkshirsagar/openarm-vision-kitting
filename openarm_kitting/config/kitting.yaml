@@ -1,0 +1,73 @@
+# Task configuration shared by the Isaac Sim scene (isaac/kitting_scene.py) and the ROS 2 nodes.
+# Frame: world = robot root, +X forward (towards the table), +Y robot-left, +Z up. Metres, radians.
+/**:
+  ros__parameters:
+    work_z: 0.364                       # where parts rest: floor of the inbound tray (cell.yaml worktop + 4 mm)
+
+    # Where parts are dropped: x0, x1, y0, y1 inside the inbound tray's walls; every part lies wholly inside,
+    # part_gap clear of the walls and of the other parts at any yaw (room for the fingers)
+    inbound_area: [0.124, 0.336, -0.446, -0.174]
+    inbound_region: [0.185, 0.285, -0.430, -0.190]          # part centres: where the right arm reaches
+    part_gap: 0.030
+
+    # Part catalogue. box: size = x, y, z (y the long side). cylinder: size = diameter, length;
+    # axis: y lies on its side (axis along the part's +Y), axis: z stands upright.
+    # yaw_symmetry: the part looks the same turned by this angle (0: round, yaw is meaningless).
+    # grasp_height: fingertips this far above the surface at the grasp (default: tcp_min_height / tcp_max_depth).
+    # asset: the NVIDIA Isaac Sim model; MoveIt and the perception use shape and size.
+    # Chosen for a two-finger grip: flat parallel faces (connector, block) or a short, light round body (pinion).
+    part_classes: [pinion, connector, block]
+    parts:
+      pinion:                           # small spur gear, lying flat
+        shape: cylinder
+        axis: z
+        size: [0.032, 0.038]
+        yaw_symmetry: 0.0
+        grasp_height: 0.008             # fingertips 8 mm up: the pads close on the toothed body
+        mass: 0.080
+        asset: Props/Factory/gear_assets/factory_gear_small/factory_gear_small.usd
+      connector:                        # T-slot connector for aluminium profiles: 8 mm base plate, 33 mm square boss
+        shape: box
+        size: [0.038, 0.114, 0.039]
+        yaw_symmetry: 3.1416
+        grasp_height: 0.022             # fingertips 22 mm up: the pads close on the boss's flat sides
+        mass: 0.060
+        asset: Props/Flip_Stack/t_connector_physics.usd
+      block:                            # machined blank, 47 mm cube
+        shape: box
+        size: [0.047, 0.047, 0.047]
+        yaw_symmetry: 1.5708
+        grasp_height: 0.018             # fingertips 18 mm up on two flat faces
+        mass: 0.280
+        asset: Props/Blocks/basic_block.usd
+
+    # Perception (openarm_kitting_perception part_detector)
+    camera: ext_zed                     # the camera parts are detected in: the frame camera over the bench
+    search_region: [0.132, 0.328, -0.438, -0.182]   # x0, x1, y0, y1: inside the inbound tray's walls
+    min_score: 0.3                      # detections whose size is further from the catalogue are dropped
+
+    # Kitting (openarm_kitting kitting_task)
+    arm: right                          # the arm that picks from the inbound tray
+    kit_surface_z: 0.380                # top of the kit tray (cell.yaml worktop + 20 mm)
+    # One pocket per class on the kit tray: x, y, yaw of the part's long side (0 = along world Y)
+    kit_slots:
+      connector: [0.222, -0.100, 1.5708]
+      block: [0.180, 0.000, 0.0]
+      pinion: [0.265, 0.000, 0.0]
+    reject_surface_z: 0.530             # parts are let go 24 mm above the reject bin's rim and drop in
+    reject_slots: [0.150, -0.525, 0.200, -0.525, 0.175, -0.555]    # x, y pairs over the bin
+    tcp_offset: 0.032                   # fingertips below the grasp frame, along the approach
+    tcp_min_height: 0.006               # fingertips stay this far above the surface the part rests on
+    tcp_max_depth: 0.020                # and reach at most this far below the part's top
+    approach: [0.05, 0.12]              # min, max approach and lift distance (m): clear of the tray rim
+    max_velocity_scaling: 0.3
+    max_acceleration_scaling: 0.3
+
+    cameras: [ext_zed]                  # simulated with depth and ground-truth masks: the frame camera
+    view_cameras: [zed]                 # simulated colour only, half resolution: the head camera
+    camera_resolution: [1920, 1200]     # ZED X Mini native
+    camera_rate: 10                     # Hz, published images (a divisor of 30)
+    video_camera: [1.45, -0.22, 1.22, 0.12, -0.18, 0.44]    # eye x, y, z → target x, y, z (world)
+    video_resolution: [1280, 720]
+    video_rate: 15                      # Hz (a divisor of 30)
+    camera_hfov_deg: 105.0              # ZED X Mini, 2.2 mm lens

@@ -1,0 +1,4 @@
+#!/usr/bin/env python3
+from openarm_kitting.isaac_attach_bridge import main
+
+main()

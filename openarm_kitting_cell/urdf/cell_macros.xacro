@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Fixed box link attached to world. xyz = box centre. -->
+  <xacro:macro name="cell_box" params="name sx sy sz x y z mat collide:=true">
+    <link name="cell_${name}">
+      <visual>
+        <geometry><box size="${sx} ${sy} ${sz}" /></geometry>
+        <material name="${mat}" />
+      </visual>
+      <xacro:if value="${collide}">
+        <collision><geometry><box size="${sx} ${sy} ${sz}" /></geometry></collision>
+      </xacro:if>
+    </link>
+    <joint name="cell_${name}_joint" type="fixed">
+      <parent link="world" />
+      <child link="cell_${name}" />
+      <origin xyz="${x} ${y} ${z}" rpy="0 0 0" />
+    </joint>
+  </xacro:macro>
+
+  <!-- Box from min/max extents (easier to match the layout table). -->
+  <xacro:macro name="cell_extent" params="name x0 x1 y0 y1 z0 z1 mat collide:=true">
+    <xacro:cell_box name="${name}" sx="${x1-x0}" sy="${y1-y0}" sz="${z1-z0}"
+                  x="${(x0+x1)/2}" y="${(y0+y1)/2}" z="${(z0+z1)/2}" mat="${mat}" collide="${collide}" />
+  </xacro:macro>
+
+  <!-- 40x40 strut between two points (box along its local X). -->
+  <xacro:macro name="cell_strut" params="name x0 y0 z0 x1 y1 z1 mat:=cell_alu">
+    <xacro:property name="dx" value="${x1-x0}" />
+    <xacro:property name="dy" value="${y1-y0}" />
+    <xacro:property name="dz" value="${z1-z0}" />
+    <xacro:property name="slen" value="${sqrt(dx*dx+dy*dy+dz*dz)}" />
+    <link name="cell_${name}">
+      <visual><geometry><box size="${slen} 0.04 0.04" /></geometry><material name="${mat}" /></visual>
+      <collision><geometry><box size="${slen} 0.04 0.04" /></geometry></collision>
+    </link>
+    <joint name="cell_${name}_joint" type="fixed">
+      <parent link="world" /><child link="cell_${name}" />
+      <origin xyz="${(x0+x1)/2} ${(y0+y1)/2} ${(z0+z1)/2}" rpy="0 ${-asin(dz/slen)} ${atan2(dy,dx)}" />
+    </joint>
+  </xacro:macro>
+
+</robot>

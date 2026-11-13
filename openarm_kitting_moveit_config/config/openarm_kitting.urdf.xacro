@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Bimanual OpenArm 2.0 in the kitting cell (openarm_kitting_cell) plus its ros2_control system.
+
+  hardware:=mock   mock_components/GenericSystem (no simulator)
+  hardware:=isaac  topic_based_ros2_control: commands on /joint_command, state from /joint_states
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="openarm_kitting">
+
+  <xacro:arg name="hardware" default="mock" />
+  <xacro:arg name="cell" default="true" />          <!-- false: robot and camera frames only (Isaac Sim) -->
+  <xacro:arg name="initial_positions_file"
+             default="$(find openarm_kitting_moveit_config)/config/initial_positions.yaml" />
+
+  <xacro:include filename="$(find openarm_kitting_cell)/urdf/kitting_cell.urdf.xacro" />
+  <xacro:include filename="$(find openarm_kitting_moveit_config)/config/openarm_kitting.ros2_control.xacro" />
+
+  <xacro:openarm_kitting_ros2_control
+    hardware="$(arg hardware)"
+    initial_positions_file="$(arg initial_positions_file)" />
+
+</robot>

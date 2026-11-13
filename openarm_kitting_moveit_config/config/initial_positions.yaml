@@ -1,0 +1,19 @@
+# Start pose for mock hardware and Isaac Sim (rad): `ready` (hands 20 cm above the worktop, pointing down,
+# elbows out), grippers closed.
+initial_positions:
+  openarm_left_joint1: -0.578
+  openarm_left_joint2: -1.522
+  openarm_left_joint3: 0.603
+  openarm_left_joint4: 1.997
+  openarm_left_joint5: 0.045
+  openarm_left_joint6: -0.454
+  openarm_left_joint7: -1.565
+  openarm_left_finger_joint1: 0.0
+  openarm_right_joint1: 0.466
+  openarm_right_joint2: 1.524
+  openarm_right_joint3: -0.489
+  openarm_right_joint4: 2.001
+  openarm_right_joint5: -0.049
+  openarm_right_joint6: -0.334
+  openarm_right_joint7: 1.567
+  openarm_right_finger_joint1: 0.0

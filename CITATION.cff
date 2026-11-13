@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Vision-guided kitting with a bimanual OpenArm 2.0"
+abstract: >-
+  Vision-guided kitting with a bimanual OpenArm 2.0 on ROS 2 Jazzy: part detection, classification and pose
+  estimation from an RGB-D camera, grasp selection and pick and place planned with MoveIt Task Constructor,
+  executed on mock hardware or in NVIDIA Isaac Sim.
+type: software
+authors:
+  - given-names: Omkar Chandrakant
+    family-names: Kshirsagar
+repository-code: "https://github.com/ookkshirsagar/openarm-vision-kitting"
+license: Apache-2.0
+version: 0.1.0
+keywords:
+  - ros2
+  - moveit2
+  - moveit-task-constructor
+  - isaac-sim
+  - perception
+  - pick-and-place
+  - openarm

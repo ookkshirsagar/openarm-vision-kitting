@@ -1,0 +1,6 @@
+# Cartesian limits for Pilz LIN/CIRC (approach, lift and retreat moves).
+cartesian_limits:
+  max_trans_vel: 0.5
+  max_trans_acc: 1.0
+  max_trans_dec: -1.0
+  max_rot_vel: 1.57

@@ -1,0 +1,54 @@
+# Kitting cell layout: one file for MoveIt's collision model (urdf/kitting_cell.urdf.xacro) and the Isaac Sim
+# scene (isaac/kitting_scene.py), so the two cannot drift apart.
+#
+# Frame: world = robot root (openarm_body_link0), +X forward (towards the bench), +Y robot-left, +Z up. Metres.
+# Boxes are given by their extents: [x0, x1, y0, y1] and z ranges.
+#
+# Isaac Sim assets are NVIDIA's (Isaac Sim 6.0 asset library); they are referenced, never copied into this
+# repository. Paths are relative to the Isaac asset root.
+
+worktop_z: 0.360                  # bench top, below the robot root (shoulders ~0.34 m above it)
+floor_z: -0.634                   # bench top is 0.994 m above the floor
+
+pedestal:                         # aluminium profile stand under the robot's column
+  asset: Props/Mounts/Stand/stand_instanceable.usd
+  xy: [-0.030, 0.0]
+  plate: [-0.180, 0.120, -0.150, 0.150]      # 16 mm adapter plate between stand and robot
+  plate_t: 0.016
+
+bench:                            # heavy-duty packing table, long side facing the robot
+  asset: Props/PackingTable/packing_table.usd
+  extent: [0.100, 0.862, -1.237, 1.237]
+  top_t: 0.040
+  hide: [container_h20]           # the asset's tote on the top: the cell brings its own trays
+
+inbound_tray:                     # stainless parts tray: parts arrive here, loose
+  extent: [0.120, 0.340, -0.450, -0.170]
+  height: 0.022                   # rim above the bench top
+  wall: 0.004
+  floor: 0.004                    # parts rest at worktop_z + floor
+
+kit_tray:                         # machined kit tray with one marked pocket per part type
+  extent: [0.130, 0.310, -0.130, 0.030]
+  height: 0.020
+
+reject_bin:                       # small load carrier (KLT); rejected parts are dropped in from above
+  asset: Props/KLT_Bin/small_KLT.usd
+  centre: [0.220, -0.560]
+  yaw: 1.5708                     # the bin's long side along world X
+  size: [0.296, 0.198, 0.146]     # x, y, z after the yaw
+  wall: 0.008
+
+camera_frame:                     # four-post aluminium profile cage around the cell, standing on the floor
+  profile: 0.045                  # 45 mm profile
+  posts_x: [-0.400, 0.920]        # post centres: behind the robot, in front of the bench
+  posts_y: [-1.000, 1.000]
+  top_z: 1.250                    # top frame (1.88 m above the floor)
+  camera_beam_y: 0.000            # crossbeam front to back on the robot's centre line, carrying the camera
+  camera_eye: [0.660, 0.000, 1.150]
+  camera_target: [0.080, 0.000, 0.400]
+
+environment:
+  asset: Environments/Simple_Warehouse/warehouse.usd
+  offset: [0.0, 0.0]              # warehouse origin in world x, y (its floor goes to floor_z)
+  yaw: 0.0

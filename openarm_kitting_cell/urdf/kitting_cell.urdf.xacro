@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Kitting cell around a bimanual OpenArm 2.0 (head ZED X Mini), laid out by config/cell.yaml:
+  robot on a pedestal behind a packing bench; on the bench an inbound parts tray, a kit tray and a reject bin;
+  a second ZED X Mini hangs from a four-post profile frame around the cell and looks down at the inbound tray.
+
+  cell:=true   robot + cell as collision boxes (MoveIt, RViz)
+  cell:=false  robot + camera frames only (Isaac Sim builds the cell from NVIDIA's assets at the same poses)
+
+  Frame: world = robot root, +X forward, +Y robot-left, +Z up. Metres.
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="openarm_kitting_cell">
+
+  <xacro:include filename="$(find openarm_description)/assets/robot/openarm_v2.0/urdf/utils/openarm_v20_robot.xacro" />
+  <xacro:include filename="$(find openarm_kitting_cell)/urdf/cell_macros.xacro" />
+  <xacro:include filename="$(find zed_description)/urdf/zed_macro.urdf.xacro" />
+
+  <xacro:arg name="cell" default="true" />
+  <xacro:arg name="robot_preset" default="bimanual_head_zed" />
+
+  <xacro:property name="c" value="${xacro.load_yaml('$(find openarm_kitting_cell)/config/cell.yaml')}" />
+  <xacro:property name="preset" value="${xacro.load_yaml('$(find openarm_kitting_cell)/config/robot_presets/' + '$(arg robot_preset)' + '.yaml')}" />
+
+  <xacro:openarm_v20_robot
+    config_root="$(find openarm_description)/assets/robot/openarm_v2.0/config"
+    robot_preset="${preset}"
+    collapse_internal_empty_links="true"
+    emit_grasp_frame="true" />
+
+  <xacro:property name="wz" value="${c['worktop_z']}" />
+  <xacro:property name="fz" value="${c['floor_z']}" />
+
+  <material name="cell_alu"><color rgba="0.74 0.76 0.78 1.0" /></material>
+  <material name="cell_steel"><color rgba="0.55 0.57 0.60 1.0" /></material>
+  <material name="cell_bench"><color rgba="0.62 0.64 0.66 1.0" /></material>
+  <material name="cell_kit"><color rgba="0.13 0.14 0.16 1.0" /></material>
+  <material name="cell_bin"><color rgba="0.55 0.27 0.62 1.0" /></material>
+
+  <!-- Reference frames used by the task and the perception -->
+  <link name="worktop" />
+  <joint name="worktop_joint" type="fixed">
+    <parent link="world" /><child link="worktop" />
+    <origin xyz="0 0 ${wz}" rpy="0 0 0" />
+  </joint>
+
+  <!-- ===================== Camera on the frame's crossbeam (also in Isaac Sim: it places the camera here) ===================== -->
+  <xacro:property name="m" value="${c['camera_frame']}" />
+  <xacro:property name="eye" value="${m['camera_eye']}" />
+  <xacro:property name="tgt" value="${m['camera_target']}" />
+  <xacro:zed_camera name="ext_zed" model="zedxm"><origin xyz="0 0 0" rpy="0 0 0" /></xacro:zed_camera>
+  <joint name="ext_zed_mount_joint" type="fixed">
+    <parent link="world" /><child link="ext_zed_camera_link" />
+    <origin xyz="${eye[0]} ${eye[1]} ${eye[2]}"
+            rpy="0 ${atan2(eye[2] - tgt[2], sqrt((tgt[0] - eye[0])**2 + (tgt[1] - eye[1])**2))} ${atan2(tgt[1] - eye[1], tgt[0] - eye[0])}" />
+  </joint>
+
+  <xacro:if value="$(arg cell)">
+    <!-- ===================== Pedestal ===================== -->
+    <xacro:property name="pd" value="${c['pedestal']}" />
+    <xacro:property name="pp" value="${pd['plate']}" />
+    <xacro:cell_extent name="pedestal_plate" x0="${pp[0]}" x1="${pp[1]}" y0="${pp[2]}" y1="${pp[3]}"
+                       z0="${-pd['plate_t']}" z1="0.0" mat="cell_steel" />
+    <xacro:cell_extent name="pedestal" x0="${pd['xy'][0] - 0.06}" x1="${pd['xy'][0] + 0.06}"
+                       y0="${pd['xy'][1] - 0.06}" y1="${pd['xy'][1] + 0.06}" z0="${fz}" z1="${-pd['plate_t']}" mat="cell_alu" />
+
+    <!-- ===================== Bench ===================== -->
+    <xacro:property name="b" value="${c['bench']['extent']}" />
+    <xacro:cell_extent name="bench_top" x0="${b[0]}" x1="${b[1]}" y0="${b[2]}" y1="${b[3]}"
+                       z0="${wz - c['bench']['top_t']}" z1="${wz}" mat="cell_bench" />
+
+    <!-- ===================== Inbound tray: floor and four walls ===================== -->
+    <xacro:property name="t" value="${c['inbound_tray']['extent']}" />
+    <xacro:property name="tw" value="${c['inbound_tray']['wall']}" />
+    <xacro:property name="th" value="${wz + c['inbound_tray']['height']}" />
+    <xacro:cell_extent name="inbound_tray_floor" x0="${t[0]}" x1="${t[1]}" y0="${t[2]}" y1="${t[3]}"
+                       z0="${wz}" z1="${wz + c['inbound_tray']['floor']}" mat="cell_steel" />
+    <xacro:cell_extent name="inbound_tray_wall_back" x0="${t[0]}" x1="${t[0] + tw}" y0="${t[2]}" y1="${t[3]}" z0="${wz}" z1="${th}" mat="cell_steel" />
+    <xacro:cell_extent name="inbound_tray_wall_front" x0="${t[1] - tw}" x1="${t[1]}" y0="${t[2]}" y1="${t[3]}" z0="${wz}" z1="${th}" mat="cell_steel" />
+    <xacro:cell_extent name="inbound_tray_wall_right" x0="${t[0]}" x1="${t[1]}" y0="${t[2]}" y1="${t[2] + tw}" z0="${wz}" z1="${th}" mat="cell_steel" />
+    <xacro:cell_extent name="inbound_tray_wall_left" x0="${t[0]}" x1="${t[1]}" y0="${t[3] - tw}" y1="${t[3]}" z0="${wz}" z1="${th}" mat="cell_steel" />
+
+    <!-- ===================== Kit tray ===================== -->
+    <xacro:property name="k" value="${c['kit_tray']['extent']}" />
+    <xacro:cell_extent name="kit_tray" x0="${k[0]}" x1="${k[1]}" y0="${k[2]}" y1="${k[3]}"
+                       z0="${wz}" z1="${wz + c['kit_tray']['height']}" mat="cell_kit" />
+
+    <!-- ===================== Reject bin: floor and four walls ===================== -->
+    <xacro:property name="r" value="${c['reject_bin']}" />
+    <xacro:property name="rx0" value="${r['centre'][0] - r['size'][0] / 2}" />
+    <xacro:property name="rx1" value="${r['centre'][0] + r['size'][0] / 2}" />
+    <xacro:property name="ry0" value="${r['centre'][1] - r['size'][1] / 2}" />
+    <xacro:property name="ry1" value="${r['centre'][1] + r['size'][1] / 2}" />
+    <xacro:property name="rz1" value="${wz + r['size'][2]}" />
+    <xacro:property name="rw" value="${r['wall']}" />
+    <xacro:cell_extent name="reject_bin_floor" x0="${rx0}" x1="${rx1}" y0="${ry0}" y1="${ry1}" z0="${wz}" z1="${wz + rw}" mat="cell_bin" />
+    <xacro:cell_extent name="reject_bin_wall_back" x0="${rx0}" x1="${rx0 + rw}" y0="${ry0}" y1="${ry1}" z0="${wz}" z1="${rz1}" mat="cell_bin" />
+    <xacro:cell_extent name="reject_bin_wall_front" x0="${rx1 - rw}" x1="${rx1}" y0="${ry0}" y1="${ry1}" z0="${wz}" z1="${rz1}" mat="cell_bin" />
+    <xacro:cell_extent name="reject_bin_wall_right" x0="${rx0}" x1="${rx1}" y0="${ry0}" y1="${ry0 + rw}" z0="${wz}" z1="${rz1}" mat="cell_bin" />
+    <xacro:cell_extent name="reject_bin_wall_left" x0="${rx0}" x1="${rx1}" y0="${ry1 - rw}" y1="${ry1}" z0="${wz}" z1="${rz1}" mat="cell_bin" />
+
+    <!-- ===================== Camera frame: four posts on the floor, top frame, crossbeam with the camera ===================== -->
+    <xacro:property name="h" value="${m['profile'] / 2}" />
+    <xacro:property name="fx" value="${m['posts_x']}" />
+    <xacro:property name="fy" value="${m['posts_y']}" />
+    <xacro:property name="tz" value="${m['top_z']}" />
+    <xacro:cell_extent name="frame_post_0" x0="${fx[0] - h}" x1="${fx[0] + h}" y0="${fy[0] - h}" y1="${fy[0] + h}" z0="${fz}" z1="${tz + h}" mat="cell_alu" />
+    <xacro:cell_extent name="frame_post_1" x0="${fx[0] - h}" x1="${fx[0] + h}" y0="${fy[1] - h}" y1="${fy[1] + h}" z0="${fz}" z1="${tz + h}" mat="cell_alu" />
+    <xacro:cell_extent name="frame_post_2" x0="${fx[1] - h}" x1="${fx[1] + h}" y0="${fy[0] - h}" y1="${fy[0] + h}" z0="${fz}" z1="${tz + h}" mat="cell_alu" />
+    <xacro:cell_extent name="frame_post_3" x0="${fx[1] - h}" x1="${fx[1] + h}" y0="${fy[1] - h}" y1="${fy[1] + h}" z0="${fz}" z1="${tz + h}" mat="cell_alu" />
+    <xacro:cell_extent name="frame_back" x0="${fx[0] - h}" x1="${fx[0] + h}" y0="${fy[0]}" y1="${fy[1]}" z0="${tz - h}" z1="${tz + h}" mat="cell_alu" />
+    <xacro:cell_extent name="frame_front" x0="${fx[1] - h}" x1="${fx[1] + h}" y0="${fy[0]}" y1="${fy[1]}" z0="${tz - h}" z1="${tz + h}" mat="cell_alu" />
+    <xacro:cell_extent name="frame_right" x0="${fx[0]}" x1="${fx[1]}" y0="${fy[0] - h}" y1="${fy[0] + h}" z0="${tz - h}" z1="${tz + h}" mat="cell_alu" />
+    <xacro:cell_extent name="frame_left" x0="${fx[0]}" x1="${fx[1]}" y0="${fy[1] - h}" y1="${fy[1] + h}" z0="${tz - h}" z1="${tz + h}" mat="cell_alu" />
+    <xacro:cell_extent name="frame_camera_beam" x0="${fx[0]}" x1="${fx[1]}" y0="${m['camera_beam_y'] - h}" y1="${m['camera_beam_y'] + h}" z0="${tz - h}" z1="${tz + h}" mat="cell_alu" />
+    <xacro:cell_extent name="frame_camera_drop" x0="${eye[0] - 0.02}" x1="${eye[0] + 0.02}" y0="${eye[1] - 0.02}" y1="${eye[1] + 0.02}" z0="${eye[2] + 0.03}" z1="${tz - h}" mat="cell_alu" />
+  </xacro:if>
+
+</robot>

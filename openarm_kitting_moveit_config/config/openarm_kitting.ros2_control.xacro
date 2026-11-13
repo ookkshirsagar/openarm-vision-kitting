@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<!-- One ros2_control system for both arms and both pinch grippers (finger_joint2 mimics finger_joint1). -->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:macro name="openarm_kitting_ros2_control" params="hardware initial_positions_file">
+    <xacro:property name="q0" value="${xacro.load_yaml(initial_positions_file)['initial_positions']}" />
+
+    <xacro:macro name="kitting_joint" params="name">
+      <joint name="${name}">
+        <command_interface name="position" />
+        <state_interface name="position">
+          <param name="initial_value">${q0[name]}</param>
+        </state_interface>
+        <state_interface name="velocity" />
+      </joint>
+    </xacro:macro>
+
+    <ros2_control name="openarm_kitting_system" type="system">
+      <hardware>
+        <xacro:if value="${hardware == 'mock'}">
+          <plugin>mock_components/GenericSystem</plugin>
+        </xacro:if>
+        <xacro:if value="${hardware == 'isaac'}">
+          <plugin>topic_based_ros2_control/TopicBasedSystem</plugin>
+          <param name="joint_commands_topic">/joint_command</param>
+          <param name="joint_states_topic">/joint_states</param>
+          <param name="trigger_joint_command_threshold">0.0</param>
+          <param name="sum_wrapped_joint_states">false</param>
+        </xacro:if>
+      </hardware>
+      <xacro:property name="arm_joints" value="${['joint1', 'joint2', 'joint3', 'joint4', 'joint5', 'joint6', 'joint7', 'finger_joint1']}" />
+      <xacro:macro name="side_joints" params="side names:=${arm_joints}">
+        <xacro:if value="${names}">
+          <xacro:kitting_joint name="openarm_${side}_${names[0]}" />
+          <xacro:side_joints side="${side}" names="${names[1:]}" />
+        </xacro:if>
+      </xacro:macro>
+      <xacro:side_joints side="left" />
+      <xacro:side_joints side="right" />
+      <!-- state only: follows finger_joint1 through the URDF <mimic> -->
+      <joint name="openarm_left_finger_joint2"><state_interface name="position" /></joint>
+      <joint name="openarm_right_finger_joint2"><state_interface name="position" /></joint>
+    </ros2_control>
+  </xacro:macro>
+
+</robot>

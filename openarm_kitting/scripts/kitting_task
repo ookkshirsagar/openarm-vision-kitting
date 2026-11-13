@@ -1,0 +1,4 @@
+#!/usr/bin/env python3
+from openarm_kitting.kitting_task import main
+
+main()

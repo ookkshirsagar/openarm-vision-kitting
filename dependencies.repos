@@ -1,0 +1,13 @@
+repositories:
+  openarm_description:
+    type: git
+    url: https://github.com/enactic/openarm_description.git
+    version: 14ff67b638ff1c738a1b9a6be8aaa5ce5ed2c831
+  zed-ros2-description:
+    type: git
+    url: https://github.com/stereolabs/zed-ros2-description.git
+    version: 449eef9566a49461cc37d6ac13230fe2886ff2be
+  topic_based_ros2_control:
+    type: git
+    url: https://github.com/PickNikRobotics/topic_based_ros2_control.git
+    version: 0.3.0
